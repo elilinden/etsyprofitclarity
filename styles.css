@@ -92,8 +92,7 @@ main {
 }
 
 .topbar h1,
-.panel h2,
-.empty-state h2 {
+.panel h2 {
   margin: 0;
 }
 
@@ -185,7 +184,6 @@ input:focus-visible,
 .icon-button svg,
 .tab svg,
 .drop-icon svg,
-.empty-state svg,
 .metric-label svg {
   width: 17px;
   height: 17px;
@@ -240,8 +238,7 @@ input:focus-visible,
 
 .dropzone small,
 .file-summary span:last-child,
-.metric-card small,
-.empty-state p {
+.metric-card small {
   color: var(--text-secondary);
 }
 
@@ -672,39 +669,6 @@ tbody tr:hover td {
 
 .qty-input {
   max-width: 70px;
-}
-
-.empty-state {
-  display: grid;
-  place-items: center;
-  gap: 8px;
-  min-height: 180px;
-  margin-top: 14px;
-  padding: 24px;
-  text-align: center;
-  color: var(--text-muted);
-  border: 1px dashed var(--border-strong);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.58);
-}
-
-.empty-state h2 {
-  color: var(--text-primary);
-  font-size: 1.05rem;
-}
-
-.empty-state p {
-  margin: 0;
-}
-
-.empty-state svg {
-  width: 28px;
-  height: 28px;
-  color: var(--green);
-}
-
-.loaded .empty-state {
-  display: none;
 }
 
 @media (max-width: 980px) {

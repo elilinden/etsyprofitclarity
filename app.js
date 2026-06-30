@@ -54,6 +54,13 @@ function init() {
   refreshIcons();
 }
 
+function getWorkbookLibrary() {
+  if (window.XLSX) return window.XLSX;
+  if (globalThis.XLSX) return globalThis.XLSX;
+  if (typeof XLSX !== "undefined") return XLSX;
+  return null;
+}
+
 function bindEvents() {
   els.fileInput.addEventListener("change", (event) => {
     const files = [...event.target.files];
@@ -205,18 +212,19 @@ function readSpreadsheet(file) {
   }
 
   if (["xlsx", "xls"].includes(extension)) {
-    if (!window.XLSX) {
+    const workbookLib = getWorkbookLibrary();
+    if (!workbookLib) {
       return Promise.reject(new Error("Excel support could not load. Try exporting from Etsy as CSV."));
     }
     return file.arrayBuffer().then((buffer) => {
-      const workbook = XLSX.read(buffer, { type: "array" });
+      const workbook = workbookLib.read(buffer, { type: "array" });
       return workbook.SheetNames.map((sheetName) => {
         const sheet = workbook.Sheets[sheetName];
         return {
           fileName: file.name,
           sheetName,
           label: `${file.name} / ${sheetName}`,
-          rows: XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" })
+          rows: workbookLib.utils.sheet_to_json(sheet, { header: 1, defval: "" })
         };
       }).filter((table) => table.rows.length);
     });
@@ -617,12 +625,13 @@ function downloadWorkbookReport() {
     return;
   }
 
-  if (!window.XLSX) {
+  const workbookLib = getWorkbookLibrary();
+  if (!workbookLib) {
     downloadSummaryCsv();
     return;
   }
 
-  const workbook = XLSX.utils.book_new();
+  const workbook = workbookLib.utils.book_new();
   workbook.Props = {
     Title: "Etsy Profit Clarity Report",
     Subject: "Etsy sales, fees, costs, and profit",
@@ -633,8 +642,9 @@ function downloadWorkbookReport() {
   appendSheet(workbook, "Summary", buildSummarySheet(), [
     { wch: 30 },
     { wch: 18 },
-    { wch: 52 }
-  ]);
+    { wch: 26 },
+    { wch: 18 }
+  ], { kind: "summary" });
   appendSheet(workbook, "Orders", buildOrdersSheet(), [
     { wch: 16 },
     { wch: 18 },
@@ -649,7 +659,7 @@ function downloadWorkbookReport() {
     { wch: 14 },
     { wch: 18 },
     { wch: 18 }
-  ]);
+  ], { kind: "table", filterRef: `A1:M${Math.max(state.orders.length + 1, 2)}` });
   appendSheet(workbook, "Transactions", buildTransactionsSheet(), [
     { wch: 30 },
     { wch: 18 },
@@ -660,45 +670,47 @@ function downloadWorkbookReport() {
     { wch: 16 },
     { wch: 14 },
     { wch: 36 }
-  ]);
+  ], { kind: "table", filterRef: `A1:I${Math.max(state.transactions.length + 1, 2)}` });
   appendSheet(workbook, "Costs", buildCostsSheet(), [
     { wch: 44 },
     { wch: 16 },
     { wch: 16 },
     { wch: 52 }
-  ]);
+  ], { kind: "costs" });
 
   const dateStamp = new Date().toISOString().slice(0, 10);
-  XLSX.writeFile(workbook, `etsy-profit-report-${dateStamp}.xlsx`);
+  workbookLib.writeFile(workbook, `etsy-profit-report-${dateStamp}.xlsx`);
 }
 
 function buildSummarySheet() {
   const totals = calculatedTotals();
   return [
-    ["Etsy Profit Clarity Report"],
-    ["Generated", new Date().toLocaleString()],
-    ["Sources", state.files.map((source) => source.label).join(" | ") || "Uploaded Etsy statement"],
+    ["Etsy Profit Clarity Report", "", "", ""],
+    ["Generated", new Date().toLocaleString(), "Sources", state.files.map((source) => source.label).join(" | ") || "Uploaded Etsy statement"],
     [],
-    ["Metric", "Value", "Notes"],
-    ["Gross sales", roundMoney(totals.grossSales), "Total Etsy sale/payment rows before deductions"],
-    ["Etsy deductions", roundMoney(totals.etsyDeductions), "Fees, buyer tax, ads, listing fees, and Etsy adjustments"],
-    ["Net after Etsy rows", roundMoney(totals.statementNet), "Statement net excluding bank deposit transfer rows"],
-    ["Product and fulfillment costs", roundMoney(totals.variableCosts), "Costs entered by default, product, or order"],
-    ["Fixed shop costs", roundMoney(totals.fixedCosts), "Fixed costs entered in the app"],
-    ["Estimated profit", roundMoney(totals.estimatedProfit), "Net after Etsy rows minus entered seller costs"],
-    ["Profit margin", totals.margin, "Estimated profit divided by gross sales"],
-    ["Orders", state.orders.length, "Grouped by Etsy order number"],
-    ["Transactions", state.transactions.length, "Cleaned rows used in this report"],
+    ["Overview", "", "", ""],
+    ["Gross sales", roundMoney(totals.grossSales), "Orders", state.orders.length],
+    ["Etsy deductions", roundMoney(totals.etsyDeductions), "Transactions", state.transactions.length],
+    ["Seller costs", roundMoney(totals.totalCosts), "Profit margin", totals.margin],
+    ["Estimated profit", roundMoney(totals.estimatedProfit), "Bank deposits", roundMoney(totals.deposits)],
     [],
-    ["Deduction Breakdown", "Amount", "Included in Etsy deductions"],
-    ["Transaction fees", roundMoney(totals.transactionFees), "Yes"],
-    ["Processing fees", roundMoney(totals.processingFees), "Yes"],
-    ["Listing fees", roundMoney(totals.listingFees), "Yes"],
-    ["Ads and offsite ads", roundMoney(totals.marketing), "Yes"],
-    ["Buyer tax remitted", roundMoney(totals.taxes), "Yes"],
-    ["Other Etsy adjustments", roundMoney(totals.otherEtsy), "Yes"],
+    ["Profit Bridge", "Amount", "Notes", ""],
+    ["Gross sales", roundMoney(totals.grossSales), "Total Etsy sale/payment rows before deductions", ""],
+    ["Minus Etsy deductions", -roundMoney(totals.etsyDeductions), "Fees, buyer tax, ads, listing fees, and Etsy adjustments", ""],
+    ["Net after Etsy rows", roundMoney(totals.statementNet), "Statement net excluding bank deposit transfer rows", ""],
+    ["Minus product and fulfillment costs", -roundMoney(totals.variableCosts), "Costs entered by default, product, or order", ""],
+    ["Minus fixed shop costs", -roundMoney(totals.fixedCosts), "Fixed costs entered in the app", ""],
+    ["Estimated profit", roundMoney(totals.estimatedProfit), "Net after Etsy rows minus entered seller costs", ""],
     [],
-    ["Bank deposits", roundMoney(totals.deposits), "Tracked separately because deposits are transfers, not revenue or expense"]
+    ["Deduction Breakdown", "Amount", "Included", ""],
+    ["Transaction fees", roundMoney(totals.transactionFees), "Yes", ""],
+    ["Processing fees", roundMoney(totals.processingFees), "Yes", ""],
+    ["Listing fees", roundMoney(totals.listingFees), "Yes", ""],
+    ["Ads and offsite ads", roundMoney(totals.marketing), "Yes", ""],
+    ["Buyer tax remitted", roundMoney(totals.taxes), "Yes", ""],
+    ["Other Etsy adjustments", roundMoney(totals.otherEtsy), "Yes", ""],
+    [],
+    ["Bank deposits", roundMoney(totals.deposits), "Tracked separately because deposits are transfers, not revenue or expense", ""]
   ];
 }
 
@@ -805,32 +817,139 @@ function buildCostsSheet() {
   return rows;
 }
 
-function appendSheet(workbook, name, rows, columns) {
-  const sheet = XLSX.utils.aoa_to_sheet(rows);
+function appendSheet(workbook, name, rows, columns, options = {}) {
+  const workbookLib = getWorkbookLibrary();
+  const sheet = workbookLib.utils.aoa_to_sheet(rows);
   sheet["!cols"] = columns;
-  applyWorkbookFormats(sheet);
-  XLSX.utils.book_append_sheet(workbook, sheet, name);
+  sheet["!rows"] = rows.map((row) => ({ hpt: isSectionRow(row) ? 25 : 22 }));
+  sheet["!views"] = [{ showGridLines: false }];
+  if (options.filterRef) sheet["!autofilter"] = { ref: options.filterRef };
+  if (options.kind === "table") sheet["!freeze"] = { xSplit: 0, ySplit: 1 };
+  if (options.kind === "summary") {
+    sheet["!merges"] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 3 } },
+      { s: { r: 3, c: 0 }, e: { r: 3, c: 3 } },
+      { s: { r: 9, c: 0 }, e: { r: 9, c: 3 } },
+      { s: { r: 17, c: 0 }, e: { r: 17, c: 3 } }
+    ];
+  }
+  applyWorkbookFormats(sheet, rows, options);
+  workbookLib.utils.book_append_sheet(workbook, sheet, name);
 }
 
-function applyWorkbookFormats(sheet) {
-  const range = XLSX.utils.decode_range(sheet["!ref"] || "A1:A1");
+function applyWorkbookFormats(sheet, rows, options = {}) {
+  const workbookLib = getWorkbookLibrary();
+  const range = workbookLib.utils.decode_range(sheet["!ref"] || "A1:A1");
   for (let row = range.s.r; row <= range.e.r; row += 1) {
     for (let col = range.s.c; col <= range.e.c; col += 1) {
-      const address = XLSX.utils.encode_cell({ r: row, c: col });
+      const address = workbookLib.utils.encode_cell({ r: row, c: col });
       const cell = sheet[address];
-      if (!cell || typeof cell.v !== "number") continue;
+      if (!cell) continue;
 
-      const header = String(sheet[XLSX.utils.encode_cell({ r: 0, c: col })]?.v || "");
-      const label = String(sheet[XLSX.utils.encode_cell({ r: row, c: 0 })]?.v || "");
-      if (/margin/i.test(header) || /margin/i.test(label)) {
-        cell.z = "0.0%";
-      } else if (/qty|orders|transactions/i.test(header) || /orders|transactions/i.test(label)) {
-        cell.z = "#,##0";
-      } else {
-        cell.z = "$#,##0.00";
-      }
+      const header = String(sheet[workbookLib.utils.encode_cell({ r: range.s.r, c: col })]?.v || "");
+      const label = String(sheet[workbookLib.utils.encode_cell({ r: row, c: 0 })]?.v || "");
+      const pairedLabel = col >= 3 ? String(rows[row]?.[col - 1] || "") : label;
+      cell.s = getCellStyle(rows[row] || [], row, col, options);
+      applyCellNumberFormat(cell, header, pairedLabel);
     }
   }
+}
+
+function getCellStyle(rowValues, row, col, options) {
+  const value = String(rowValues[col] ?? "");
+  const label = String(rowValues[0] ?? "");
+  const base = {
+    font: { name: "Inter", sz: 11, color: { rgb: "17211B" } },
+    alignment: { vertical: "center", wrapText: true },
+    border: {
+      top: { style: "thin", color: { rgb: "DFE5E0" } },
+      bottom: { style: "thin", color: { rgb: "DFE5E0" } },
+      left: { style: "thin", color: { rgb: "DFE5E0" } },
+      right: { style: "thin", color: { rgb: "DFE5E0" } }
+    }
+  };
+
+  if (row === 0 && options.kind === "summary") {
+    return {
+      ...base,
+      font: { name: "Inter", sz: 20, bold: true, color: { rgb: "17211B" } },
+      fill: { fgColor: { rgb: "E7F3ED" } },
+      alignment: { vertical: "center" },
+      border: {
+        top: { style: "medium", color: { rgb: "176B4D" } },
+        bottom: { style: "medium", color: { rgb: "176B4D" } },
+        left: { style: "medium", color: { rgb: "176B4D" } },
+        right: { style: "medium", color: { rgb: "176B4D" } }
+      }
+    };
+  }
+
+  if (isSectionRow(rowValues)) {
+    return {
+      ...base,
+      font: { name: "Inter", sz: 12, bold: true, color: { rgb: "176B4D" } },
+      fill: { fgColor: { rgb: "EDF6F1" } },
+      alignment: { vertical: "center" }
+    };
+  }
+
+  if (options.kind === "table" && row === 0) {
+    return {
+      ...base,
+      font: { name: "Inter", sz: 10, bold: true, color: { rgb: "FFFFFF" } },
+      fill: { fgColor: { rgb: "176B4D" } },
+      alignment: { vertical: "center", horizontal: col >= 3 ? "right" : "left", wrapText: true }
+    };
+  }
+
+  if (options.kind === "costs" && (row === 0 || isCostsSubheader(label))) {
+    return {
+      ...base,
+      font: { name: "Inter", sz: 10, bold: true, color: { rgb: "FFFFFF" } },
+      fill: { fgColor: { rgb: "176B4D" } },
+      alignment: { vertical: "center", wrapText: true }
+    };
+  }
+
+  const isMoneyOrCount = typeof rowValues[col] === "number";
+  const isProfit = /estimated profit/i.test(label);
+  const isDeduction = /deductions|minus|fees|tax/i.test(label);
+
+  return {
+    ...base,
+    font: {
+      name: "Inter",
+      sz: 11,
+      bold: col === 0 || isProfit,
+      color: { rgb: isProfit ? "176B4D" : isDeduction && col === 1 ? "BD3F3F" : "17211B" }
+    },
+    fill: { fgColor: { rgb: row % 2 === 0 ? "FFFFFF" : "FBFCFA" } },
+    alignment: {
+      vertical: "center",
+      horizontal: isMoneyOrCount ? "right" : "left",
+      wrapText: true
+    }
+  };
+}
+
+function applyCellNumberFormat(cell, header, label) {
+  if (typeof cell.v !== "number") return;
+  if (/margin/i.test(header) || /margin/i.test(label)) {
+    cell.z = "0.0%";
+  } else if (/qty|orders|transactions|detected orders/i.test(header) || /^orders$|^transactions$/i.test(label)) {
+    cell.z = "#,##0";
+  } else {
+    cell.z = "$#,##0.00";
+  }
+}
+
+function isSectionRow(rowValues) {
+  const [first, second, third, fourth] = rowValues;
+  return Boolean(first) && !second && !third && !fourth;
+}
+
+function isCostsSubheader(label) {
+  return ["Product Rule", "Order Override"].includes(label);
 }
 
 function dedupeTransactions(transactions) {

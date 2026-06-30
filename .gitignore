@@ -1,0 +1,6 @@
+.DS_Store
+.swarm/
+agentdb.rvf
+agentdb.rvf.lock
+ruvector.db
+Screenshot*.png

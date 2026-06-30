@@ -1060,3 +1060,59 @@ tbody tr:hover td {
     gap: 6px;
   }
 }
+
+/* Footer Styles */
+footer {
+  text-align: center;
+  padding: 2rem 1rem;
+  margin-top: 3rem;
+  border-top: 1px solid #eaeaea;
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.footer-links a {
+  color: #0066cc;
+  text-decoration: none;
+  margin: 0 0.5rem;
+}
+
+.footer-links a:hover {
+  text-decoration: underline;
+}
+
+.footer-copyright {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: #999;
+}
+
+/* Legal Pages Styling */
+.legal-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  line-height: 1.6;
+}
+
+.legal-container h1 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.legal-container h2 {
+  font-size: 1.25rem;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.legal-container ul {
+  margin-bottom: 1.5rem;
+  padding-left: 1.5rem;
+}
+
+.legal-container p {
+  margin-bottom: 1rem;
+}
+

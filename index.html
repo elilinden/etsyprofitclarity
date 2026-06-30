@@ -4,28 +4,48 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Etsy Profit Clarity</title>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    >
+
     <link rel="stylesheet" href="styles.css">
+
     <script src="vendor/xlsx-js-style.min.js"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
   </head>
+
   <body>
     <header class="topbar">
       <div class="brand-block">
-        <span class="brand-mark"><i data-lucide="leaf"></i></span>
+        <span class="brand-mark">
+          <i data-lucide="leaf"></i>
+        </span>
+
         <div>
           <p class="eyebrow">Etsy seller finance</p>
           <h1>Etsy Profit Clarity</h1>
         </div>
       </div>
+
       <div class="topbar-actions">
-        <p class="topbar-note">Payment account exports, costs, and order-level profit in one clear workspace.</p>
-        <button class="ghost-button primary-button" id="downloadReport" type="button">
+        <p class="topbar-note">
+          Payment account exports, costs, and order-level profit in one clear workspace.
+        </p>
+
+        <button
+          class="ghost-button primary-button"
+          id="downloadReport"
+          type="button"
+        >
           <i data-lucide="file-spreadsheet"></i>
           Download report
         </button>
+
         <button class="ghost-button" id="demoReset" type="button">
           <i data-lucide="rotate-ccw"></i>
           Reset costs
@@ -36,19 +56,46 @@
     <main>
       <section class="upload-band">
         <label class="dropzone" id="dropzone" for="fileInput">
-          <input id="fileInput" type="file" accept=".csv,.xlsx,.xls" multiple>
-          <span class="drop-icon"><i data-lucide="file-up"></i></span>
+          <input
+            id="fileInput"
+            type="file"
+            accept=".csv,.xlsx,.xls"
+            multiple
+          >
+
+          <span class="drop-icon">
+            <i data-lucide="file-up"></i>
+          </span>
+
           <span class="upload-copy">
             <strong>Upload Etsy payment account files</strong>
-            <small>CSV, XLSX, or XLS with Etsy's Date, Type, Title, Info, Amount, Fees &amp; Taxes, and Net columns.</small>
-            <span class="upload-help-line">Not sure where to find this file? <button class="text-link" id="exportHelpToggle" type="button">See Etsy export steps</button></span>
+
+            <small>
+              CSV, XLSX, or XLS with Etsy's Date, Type, Title, Info,
+              Amount, Fees &amp; Taxes, and Net columns.
+            </small>
+
+            <span class="upload-help-line">
+              Not sure where to find this file?
+
+              <button
+                class="text-link"
+                id="exportHelpToggle"
+                type="button"
+              >
+                See Etsy export steps
+              </button>
+            </span>
           </span>
         </label>
+
         <div class="file-summary" aria-live="polite">
           <span id="fileName">No file loaded</span>
           <span id="fileMeta">Drop files here or choose them.</span>
+
           <div class="period-controls">
             <label for="periodFilter">Period</label>
+
             <select id="periodFilter">
               <option value="all">All uploaded data</option>
               <option value="this-month">This month</option>
@@ -56,17 +103,22 @@
               <option value="custom">Custom dates</option>
             </select>
           </div>
+
           <div class="custom-period" id="customPeriod" hidden>
             <label>
               Start
               <input id="periodStart" type="date">
             </label>
+
             <label>
               End
               <input id="periodEnd" type="date">
             </label>
           </div>
-          <span class="detected-range" id="detectedRange">No date range detected yet</span>
+
+          <span class="detected-range" id="detectedRange">
+            No date range detected yet
+          </span>
         </div>
       </section>
 
@@ -75,33 +127,81 @@
           <p class="eyebrow">Etsy export help</p>
           <h2>How to download your Etsy CSV file</h2>
         </div>
+
         <div class="help-steps">
-          <p><strong>1. Open Etsy Shop Manager</strong><br>Sign in to Etsy and open your Shop Manager.</p>
-          <p><strong>2. Go to your download settings</strong><br>Open <strong>Settings</strong>, select <strong>Options</strong>, and then choose the <strong>Download Data</strong> tab.</p>
-          <p><strong>3. Download your orders file</strong><br>Download the CSV file containing your Etsy orders, then return here and upload it.</p>
+          <p>
+            <strong>1. Open Etsy Shop Manager</strong>
+            <br>
+            Sign in to Etsy and open your Shop Manager.
+          </p>
+
+          <p>
+            <strong>2. Go to your download settings</strong>
+            <br>
+            Open <strong>Settings</strong>, select <strong>Options</strong>,
+            and then choose the <strong>Download Data</strong> tab.
+          </p>
+
+          <p>
+            <strong>3. Download your orders file</strong>
+            <br>
+            Download the CSV file containing your Etsy orders, then return
+            here and upload it.
+          </p>
         </div>
-        <img class="help-screenshot" src="assets/etsy-download-data-screenshot.svg" alt="Etsy settings page with the Download Data tab highlighted">
-        <button class="ghost-button" id="exportHelpClose" type="button">Got it</button>
+
+        <img
+          class="help-screenshot"
+          src="assets/etsy-download-data-screenshot.svg"
+          alt="Etsy settings page with the Download Data tab highlighted"
+        >
+
+        <button
+          class="ghost-button"
+          id="exportHelpClose"
+          type="button"
+        >
+          Got it
+        </button>
       </section>
 
       <section class="metrics-grid" id="metricGrid">
         <article class="metric-card">
-          <span class="metric-label"><i data-lucide="shopping-bag"></i>Gross sales</span>
+          <span class="metric-label">
+            <i data-lucide="shopping-bag"></i>
+            Gross sales
+          </span>
+
           <strong id="metricSales">$0.00</strong>
           <small id="metricOrders">0 orders</small>
         </article>
+
         <article class="metric-card">
-          <span class="metric-label"><i data-lucide="minus-circle"></i>Etsy deductions</span>
+          <span class="metric-label">
+            <i data-lucide="minus-circle"></i>
+            Etsy deductions
+          </span>
+
           <strong id="metricDeductions">$0.00</strong>
           <small>Fees, buyer tax, ads, listing costs</small>
         </article>
+
         <article class="metric-card">
-          <span class="metric-label"><i data-lucide="package-check"></i>Your costs</span>
+          <span class="metric-label">
+            <i data-lucide="package-check"></i>
+            Your costs
+          </span>
+
           <strong id="metricCosts">$0.00</strong>
           <small>Product, shipping, packaging, fixed costs</small>
         </article>
+
         <article class="metric-card profit-card">
-          <span class="metric-label"><i data-lucide="wallet-cards"></i>Estimated profit</span>
+          <span class="metric-label">
+            <i data-lucide="wallet-cards"></i>
+            Estimated profit
+          </span>
+
           <strong id="metricProfit">$0.00</strong>
           <small id="metricMargin">0.0% margin</small>
           <div class="profit-notice" id="profitNotice"></div>
@@ -109,19 +209,38 @@
       </section>
 
       <nav class="tabs" aria-label="Dashboard views">
-        <button class="tab active" type="button" data-tab="summary">
+        <button
+          class="tab active"
+          type="button"
+          data-tab="summary"
+        >
           <i data-lucide="layout-dashboard"></i>
           Summary
         </button>
-        <button class="tab" type="button" data-tab="costs">
+
+        <button
+          class="tab"
+          type="button"
+          data-tab="costs"
+        >
           <i data-lucide="calculator"></i>
           Costs
         </button>
-        <button class="tab" type="button" data-tab="orders">
+
+        <button
+          class="tab"
+          type="button"
+          data-tab="orders"
+        >
           <i data-lucide="receipt-text"></i>
           Orders
         </button>
-        <button class="tab" type="button" data-tab="transactions">
+
+        <button
+          class="tab"
+          type="button"
+          data-tab="transactions"
+        >
           <i data-lucide="list-filter"></i>
           Transactions
         </button>
@@ -135,10 +254,17 @@
                 <p class="eyebrow">Where the money went</p>
                 <h2>Statement breakdown</h2>
               </div>
-              <button class="icon-button" id="downloadSummary" type="button" title="Download CSV summary">
+
+              <button
+                class="icon-button"
+                id="downloadSummary"
+                type="button"
+                title="Download CSV summary"
+              >
                 <i data-lucide="download"></i>
               </button>
             </div>
+
             <div class="breakdown-list" id="breakdownList"></div>
           </article>
 
@@ -149,20 +275,42 @@
                 <h2>From sale to profit</h2>
               </div>
             </div>
+
             <div class="bridge" id="profitBridge"></div>
           </article>
         </div>
+
         <article class="panel product-performance-panel">
           <div class="panel-heading compact-heading">
             <div>
               <p class="eyebrow">Product performance</p>
               <h2>Most profitable products</h2>
             </div>
-            <div class="mini-segmented" role="group" aria-label="Product performance mode">
-              <button class="active" id="bestProducts" type="button" data-product-mode="best">Best performing</button>
-              <button id="lowestProducts" type="button" data-product-mode="lowest">Lowest performing</button>
+
+            <div
+              class="mini-segmented"
+              role="group"
+              aria-label="Product performance mode"
+            >
+              <button
+                class="active"
+                id="bestProducts"
+                type="button"
+                data-product-mode="best"
+              >
+                Best performing
+              </button>
+
+              <button
+                id="lowestProducts"
+                type="button"
+                data-product-mode="lowest"
+              >
+                Lowest performing
+              </button>
             </div>
           </div>
+
           <div class="responsive-table compact-table-wrap">
             <table>
               <thead>
@@ -172,6 +320,7 @@
                   <th>Profit</th>
                 </tr>
               </thead>
+
               <tbody id="productPerformanceBody"></tbody>
             </table>
           </div>
@@ -187,26 +336,76 @@
                 <h2>Costs applied to every order</h2>
               </div>
             </div>
+
             <div class="input-grid">
               <label>
                 Product cost
-                <input class="money-input" id="defaultProductCost" data-cost-key="defaultProductCost" type="number" min="0" step="0.01" placeholder="0.00">
+
+                <input
+                  class="money-input"
+                  id="defaultProductCost"
+                  data-cost-key="defaultProductCost"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                >
               </label>
+
               <label>
                 Shipping label cost
-                <input class="money-input" id="defaultShippingCost" data-cost-key="defaultShippingCost" type="number" min="0" step="0.01" placeholder="0.00">
+
+                <input
+                  class="money-input"
+                  id="defaultShippingCost"
+                  data-cost-key="defaultShippingCost"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                >
               </label>
+
               <label>
                 Packaging cost
-                <input class="money-input" id="defaultPackagingCost" data-cost-key="defaultPackagingCost" type="number" min="0" step="0.01" placeholder="0.00">
+
+                <input
+                  class="money-input"
+                  id="defaultPackagingCost"
+                  data-cost-key="defaultPackagingCost"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                >
               </label>
+
               <label>
                 Other cost per order
-                <input class="money-input" id="defaultOtherCost" data-cost-key="defaultOtherCost" type="number" min="0" step="0.01" placeholder="0.00">
+
+                <input
+                  class="money-input"
+                  id="defaultOtherCost"
+                  data-cost-key="defaultOtherCost"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                >
               </label>
+
               <label>
                 Fixed shop costs
-                <input class="money-input" id="fixedCosts" data-cost-key="fixedCosts" type="number" min="0" step="0.01" placeholder="0.00">
+
+                <input
+                  class="money-input"
+                  id="fixedCosts"
+                  data-cost-key="fixedCosts"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                >
               </label>
             </div>
           </article>
@@ -218,6 +417,7 @@
                 <h2>Costs by item title</h2>
               </div>
             </div>
+
             <div class="responsive-table">
               <table>
                 <thead>
@@ -227,6 +427,7 @@
                     <th>Unit cost</th>
                   </tr>
                 </thead>
+
                 <tbody id="productCostBody"></tbody>
               </table>
             </div>
@@ -242,20 +443,30 @@
               <h2>Fine-tune exact costs</h2>
             </div>
           </div>
+
           <div class="table-toolbar">
             <label class="search-field">
               <span>Search orders</span>
-              <input id="orderSearch" type="search" placeholder="Order number or product">
+
+              <input
+                id="orderSearch"
+                type="search"
+                placeholder="Order number or product"
+              >
             </label>
+
             <label>
               <span>Filter</span>
+
               <select id="orderProfitFilter">
                 <option value="all">All orders</option>
                 <option value="losing">Losing money</option>
               </select>
             </label>
+
             <label>
               <span>Sort</span>
+
               <select id="orderSort">
                 <option value="newest">Newest</option>
                 <option value="highest-profit">Highest profit</option>
@@ -263,6 +474,7 @@
               </select>
             </label>
           </div>
+
           <div class="responsive-table order-table-wrap">
             <table class="dense-table">
               <thead>
@@ -280,6 +492,7 @@
                   <th>Profit</th>
                 </tr>
               </thead>
+
               <tbody id="ordersBody"></tbody>
             </table>
           </div>
@@ -294,6 +507,7 @@
               <h2>Parsed Etsy transactions</h2>
             </div>
           </div>
+
           <div class="responsive-table transaction-table-wrap">
             <table class="dense-table">
               <thead>
@@ -308,21 +522,56 @@
                   <th>Net</th>
                 </tr>
               </thead>
+
               <tbody id="transactionsBody"></tbody>
             </table>
           </div>
         </article>
       </section>
-
     </main>
 
+    <footer>
+      <div class="footer-links">
+        <a href="privacy.html">Privacy Policy</a>
+        <span aria-hidden="true">|</span>
+        <a href="terms.html">Terms of Use</a>
+      </div>
+
+      <div class="footer-copyright">
+        &copy; 2026 Etsy Profit Clarity
+      </div>
+    </footer>
+
     <div class="modal-backdrop" id="resetModal" hidden>
-      <section class="modal" role="dialog" aria-modal="true" aria-labelledby="resetTitle">
+      <section
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="resetTitle"
+      >
         <h2 id="resetTitle">Reset all entered costs?</h2>
-        <p>This clears default costs, product rules, and order-level overrides saved in this browser.</p>
+
+        <p>
+          This clears default costs, product rules, and order-level
+          overrides saved in this browser.
+        </p>
+
         <div class="modal-actions">
-          <button class="ghost-button" id="cancelReset" type="button">Cancel</button>
-          <button class="ghost-button danger-button" id="confirmReset" type="button">Reset</button>
+          <button
+            class="ghost-button"
+            id="cancelReset"
+            type="button"
+          >
+            Cancel
+          </button>
+
+          <button
+            class="ghost-button danger-button"
+            id="confirmReset"
+            type="button"
+          >
+            Reset
+          </button>
         </div>
       </section>
     </div>

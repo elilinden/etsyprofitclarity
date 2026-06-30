@@ -38,15 +38,50 @@
         <label class="dropzone" id="dropzone" for="fileInput">
           <input id="fileInput" type="file" accept=".csv,.xlsx,.xls" multiple>
           <span class="drop-icon"><i data-lucide="file-up"></i></span>
-          <span>
+          <span class="upload-copy">
             <strong>Upload Etsy payment account files</strong>
             <small>CSV, XLSX, or XLS with Etsy's Date, Type, Title, Info, Amount, Fees &amp; Taxes, and Net columns.</small>
+            <span class="upload-help-line">Not sure where to find this file? <button class="text-link" id="exportHelpToggle" type="button">See Etsy export steps</button></span>
           </span>
         </label>
         <div class="file-summary" aria-live="polite">
           <span id="fileName">No file loaded</span>
           <span id="fileMeta">Drop files here or choose them.</span>
+          <div class="period-controls">
+            <label for="periodFilter">Period</label>
+            <select id="periodFilter">
+              <option value="all">All uploaded data</option>
+              <option value="this-month">This month</option>
+              <option value="last-month">Last month</option>
+              <option value="custom">Custom dates</option>
+            </select>
+          </div>
+          <div class="custom-period" id="customPeriod" hidden>
+            <label>
+              Start
+              <input id="periodStart" type="date">
+            </label>
+            <label>
+              End
+              <input id="periodEnd" type="date">
+            </label>
+          </div>
+          <span class="detected-range" id="detectedRange">No date range detected yet</span>
         </div>
+      </section>
+
+      <section class="export-help-panel" id="exportHelpPanel" hidden>
+        <div>
+          <p class="eyebrow">Etsy export help</p>
+          <h2>How to download your Etsy CSV file</h2>
+        </div>
+        <div class="help-steps">
+          <p><strong>1. Open Etsy Shop Manager</strong><br>Sign in to Etsy and open your Shop Manager.</p>
+          <p><strong>2. Go to your download settings</strong><br>Open <strong>Settings</strong>, select <strong>Options</strong>, and then choose the <strong>Download Data</strong> tab.</p>
+          <p><strong>3. Download your orders file</strong><br>Download the CSV file containing your Etsy orders, then return here and upload it.</p>
+        </div>
+        <img class="help-screenshot" src="assets/etsy-download-data-screenshot.svg" alt="Etsy settings page with the Download Data tab highlighted">
+        <button class="ghost-button" id="exportHelpClose" type="button">Got it</button>
       </section>
 
       <section class="metrics-grid" id="metricGrid">
@@ -69,6 +104,7 @@
           <span class="metric-label"><i data-lucide="wallet-cards"></i>Estimated profit</span>
           <strong id="metricProfit">$0.00</strong>
           <small id="metricMargin">0.0% margin</small>
+          <div class="profit-notice" id="profitNotice"></div>
         </article>
       </section>
 
@@ -116,6 +152,30 @@
             <div class="bridge" id="profitBridge"></div>
           </article>
         </div>
+        <article class="panel product-performance-panel">
+          <div class="panel-heading compact-heading">
+            <div>
+              <p class="eyebrow">Product performance</p>
+              <h2>Most profitable products</h2>
+            </div>
+            <div class="mini-segmented" role="group" aria-label="Product performance mode">
+              <button class="active" id="bestProducts" type="button" data-product-mode="best">Best performing</button>
+              <button id="lowestProducts" type="button" data-product-mode="lowest">Lowest performing</button>
+            </div>
+          </div>
+          <div class="responsive-table compact-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Orders</th>
+                  <th>Profit</th>
+                </tr>
+              </thead>
+              <tbody id="productPerformanceBody"></tbody>
+            </table>
+          </div>
+        </article>
       </section>
 
       <section class="view" id="costsView">
@@ -182,6 +242,27 @@
               <h2>Fine-tune exact costs</h2>
             </div>
           </div>
+          <div class="table-toolbar">
+            <label class="search-field">
+              <span>Search orders</span>
+              <input id="orderSearch" type="search" placeholder="Order number or product">
+            </label>
+            <label>
+              <span>Filter</span>
+              <select id="orderProfitFilter">
+                <option value="all">All orders</option>
+                <option value="losing">Losing money</option>
+              </select>
+            </label>
+            <label>
+              <span>Sort</span>
+              <select id="orderSort">
+                <option value="newest">Newest</option>
+                <option value="highest-profit">Highest profit</option>
+                <option value="lowest-profit">Lowest profit</option>
+              </select>
+            </label>
+          </div>
           <div class="responsive-table order-table-wrap">
             <table class="dense-table">
               <thead>
@@ -234,6 +315,17 @@
       </section>
 
     </main>
+
+    <div class="modal-backdrop" id="resetModal" hidden>
+      <section class="modal" role="dialog" aria-modal="true" aria-labelledby="resetTitle">
+        <h2 id="resetTitle">Reset all entered costs?</h2>
+        <p>This clears default costs, product rules, and order-level overrides saved in this browser.</p>
+        <div class="modal-actions">
+          <button class="ghost-button" id="cancelReset" type="button">Cancel</button>
+          <button class="ghost-button danger-button" id="confirmReset" type="button">Reset</button>
+        </div>
+      </section>
+    </div>
 
     <script src="app.js"></script>
   </body>

@@ -2,9 +2,19 @@ const state = {
   files: [],
   rows: [],
   transactions: [],
+  filteredTransactions: [],
   orders: [],
   productTitles: [],
   analysis: null,
+  ui: {
+    period: "all",
+    customStart: "",
+    customEnd: "",
+    orderSearch: "",
+    orderProfitFilter: "all",
+    orderSort: "newest",
+    productMode: "best"
+  },
   costs: {
     defaultProductCost: "",
     defaultShippingCost: "",
@@ -32,14 +42,30 @@ const els = {
   metricOrders: document.getElementById("metricOrders"),
   metricDeductions: document.getElementById("metricDeductions"),
   metricCosts: document.getElementById("metricCosts"),
+  profitNotice: document.getElementById("profitNotice"),
+  periodFilter: document.getElementById("periodFilter"),
+  customPeriod: document.getElementById("customPeriod"),
+  periodStart: document.getElementById("periodStart"),
+  periodEnd: document.getElementById("periodEnd"),
+  detectedRange: document.getElementById("detectedRange"),
   breakdownList: document.getElementById("breakdownList"),
   profitBridge: document.getElementById("profitBridge"),
+  productPerformanceBody: document.getElementById("productPerformanceBody"),
   productCostBody: document.getElementById("productCostBody"),
+  orderSearch: document.getElementById("orderSearch"),
+  orderProfitFilter: document.getElementById("orderProfitFilter"),
+  orderSort: document.getElementById("orderSort"),
   ordersBody: document.getElementById("ordersBody"),
   transactionsBody: document.getElementById("transactionsBody"),
+  exportHelpToggle: document.getElementById("exportHelpToggle"),
+  exportHelpPanel: document.getElementById("exportHelpPanel"),
+  exportHelpClose: document.getElementById("exportHelpClose"),
   downloadReport: document.getElementById("downloadReport"),
   downloadSummary: document.getElementById("downloadSummary"),
-  demoReset: document.getElementById("demoReset")
+  demoReset: document.getElementById("demoReset"),
+  resetModal: document.getElementById("resetModal"),
+  cancelReset: document.getElementById("cancelReset"),
+  confirmReset: document.getElementById("confirmReset")
 };
 
 const requiredHeaders = ["Date", "Type", "Title", "Info", "Amount", "Fees & Taxes", "Net"];
@@ -90,6 +116,43 @@ function bindEvents() {
     button.addEventListener("click", () => setActiveTab(button.dataset.tab));
   });
 
+  els.periodFilter.addEventListener("change", () => {
+    state.ui.period = els.periodFilter.value;
+    syncAnalysisFromFilters();
+    renderAll();
+  });
+
+  [els.periodStart, els.periodEnd].forEach((input) => {
+    input.addEventListener("input", () => {
+      state.ui.customStart = els.periodStart.value;
+      state.ui.customEnd = els.periodEnd.value;
+      syncAnalysisFromFilters();
+      renderAll();
+    });
+  });
+
+  els.orderSearch.addEventListener("input", () => {
+    state.ui.orderSearch = els.orderSearch.value;
+    renderOrders();
+  });
+
+  els.orderProfitFilter.addEventListener("change", () => {
+    state.ui.orderProfitFilter = els.orderProfitFilter.value;
+    renderOrders();
+  });
+
+  els.orderSort.addEventListener("change", () => {
+    state.ui.orderSort = els.orderSort.value;
+    renderOrders();
+  });
+
+  document.querySelectorAll("[data-product-mode]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.ui.productMode = button.dataset.productMode;
+      renderProductPerformance();
+    });
+  });
+
   document.querySelectorAll("[data-cost-key]").forEach((input) => {
     input.addEventListener("input", () => {
       state.costs[input.dataset.costKey] = input.value;
@@ -123,18 +186,29 @@ function bindEvents() {
   els.downloadReport.addEventListener("click", downloadWorkbookReport);
 
   els.demoReset.addEventListener("click", () => {
-    state.costs = {
-      defaultProductCost: "",
-      defaultShippingCost: "",
-      defaultPackagingCost: "",
-      defaultOtherCost: "",
-      fixedCosts: "",
-      productCosts: {},
-      orderOverrides: {}
-    };
-    saveCosts();
-    populateDefaultInputs();
-    renderAll();
+    showResetModal();
+  });
+
+  els.cancelReset.addEventListener("click", hideResetModal);
+  els.confirmReset.addEventListener("click", resetAllCosts);
+  els.resetModal.addEventListener("click", (event) => {
+    if (event.target === els.resetModal) hideResetModal();
+  });
+
+  els.profitNotice.addEventListener("click", (event) => {
+    const review = event.target.closest("[data-review-costs]");
+    if (review) setActiveTab("costs");
+  });
+
+  els.exportHelpToggle.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    toggleExportHelp();
+  });
+
+  els.exportHelpClose.addEventListener("click", hideExportHelp);
+  els.exportHelpPanel.addEventListener("click", (event) => {
+    event.stopPropagation();
   });
 }
 
@@ -182,12 +256,10 @@ async function handleFiles(files) {
     state.files = loadedSources;
     state.rows = allRows;
     state.transactions = transactions;
-    state.analysis = analyzeTransactions(state.transactions);
-    state.orders = state.analysis.orders;
-    state.productTitles = state.analysis.productTitles;
+    syncAnalysisFromFilters();
 
     els.fileName.textContent = formatFileTitle(files, loadedSources);
-    els.fileMeta.textContent = formatFileMeta(loadedSources, transactions.length, state.orders.length, duplicatesSkipped);
+    els.fileMeta.textContent = formatFileMeta(loadedSources, transactions.length, analyzeTransactions(transactions).orders.length, duplicatesSkipped);
     els.fileMeta.title = loadedSources.map((source) => `${source.label}: ${source.rows} rows`).join("\n");
     document.body.classList.add("loaded");
     renderAll();
@@ -402,23 +474,71 @@ function analyzeTransactions(transactions) {
 }
 
 function recalcAndRender() {
-  if (state.analysis) {
-    state.analysis = analyzeTransactions(state.transactions);
-    state.orders = state.analysis.orders;
-    state.productTitles = state.analysis.productTitles;
-  }
+  syncAnalysisFromFilters();
   renderMetrics();
   renderSummary();
+  renderProductPerformance();
   renderOrders();
+  renderTransactions();
 }
 
 function renderAll() {
+  renderPeriodControls();
   renderMetrics();
   renderSummary();
+  renderProductPerformance();
   renderProductCosts();
   renderOrders();
   renderTransactions();
   refreshIcons();
+}
+
+function syncAnalysisFromFilters() {
+  state.filteredTransactions = getPeriodTransactions();
+  state.analysis = analyzeTransactions(state.filteredTransactions);
+  state.orders = state.analysis.orders;
+  state.productTitles = state.analysis.productTitles;
+}
+
+function getPeriodTransactions() {
+  const bounds = getPeriodBounds();
+  if (!bounds) return [...state.transactions];
+
+  return state.transactions.filter((tx) => {
+    const value = parseDateValue(tx.date);
+    return value >= bounds.start && value <= bounds.end;
+  });
+}
+
+function getPeriodBounds() {
+  if (state.ui.period === "all") return null;
+  const now = new Date();
+  let start;
+  let end;
+
+  if (state.ui.period === "this-month") {
+    start = new Date(now.getFullYear(), now.getMonth(), 1);
+    end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+  } else if (state.ui.period === "last-month") {
+    start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    end = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+  } else {
+    start = state.ui.customStart ? new Date(`${state.ui.customStart}T00:00:00`) : null;
+    end = state.ui.customEnd ? new Date(`${state.ui.customEnd}T23:59:59`) : null;
+  }
+
+  return {
+    start: start && Number.isFinite(start.getTime()) ? start.getTime() : Number.NEGATIVE_INFINITY,
+    end: end && Number.isFinite(end.getTime()) ? end.getTime() : Number.POSITIVE_INFINITY
+  };
+}
+
+function renderPeriodControls() {
+  els.periodFilter.value = state.ui.period;
+  els.periodStart.value = state.ui.customStart;
+  els.periodEnd.value = state.ui.customEnd;
+  els.customPeriod.hidden = state.ui.period !== "custom";
+  els.detectedRange.textContent = formatDetectedRange();
 }
 
 function renderMetrics() {
@@ -430,6 +550,46 @@ function renderMetrics() {
   els.metricOrders.textContent = `${state.orders.length} order${state.orders.length === 1 ? "" : "s"}`;
   els.metricDeductions.textContent = formatMoney(totals.etsyDeductions);
   els.metricCosts.textContent = formatMoney(totals.totalCosts);
+  renderProfitNotice();
+}
+
+function renderProfitNotice() {
+  if (!state.orders.length) {
+    els.profitNotice.innerHTML = "";
+    return;
+  }
+
+  const missing = state.orders.reduce((counts, order) => {
+    const costs = calculateOrderCosts(order);
+    if (costs.productUnit <= 0) counts.product += 1;
+    if (costs.shipping <= 0) counts.shipping += 1;
+    if (costs.packaging <= 0) counts.packaging += 1;
+    return counts;
+  }, { product: 0, shipping: 0, packaging: 0 });
+
+  if (!missing.product && !missing.shipping && !missing.packaging) {
+    els.profitNotice.innerHTML = `<div class="notice-ok"><span aria-hidden="true">✓</span> All orders have cost information</div>`;
+    return;
+  }
+
+  let detail;
+  if (missing.product) {
+    detail = `${missing.product} ${pluralize("order", missing.product)} ${missing.product === 1 ? "is" : "are"} currently using a $0 product cost.`;
+  } else {
+    const affected = state.orders.filter((order) => {
+      const costs = calculateOrderCosts(order);
+      return costs.shipping <= 0 || costs.packaging <= 0;
+    }).length;
+    detail = `${affected} ${pluralize("order", affected)} ${affected === 1 ? "is" : "are"} missing shipping or packaging costs.`;
+  }
+
+  els.profitNotice.innerHTML = `
+    <div class="notice-warning">
+      <strong>Profit may be incomplete</strong>
+      <span>${escapeHtml(detail)}</span>
+      <button class="text-link" type="button" data-review-costs>Review costs</button>
+    </div>
+  `;
 }
 
 function renderSummary() {
@@ -471,9 +631,47 @@ function renderSummary() {
   `).join("");
 }
 
+function renderProductPerformance() {
+  document.querySelectorAll("[data-product-mode]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.productMode === state.ui.productMode);
+  });
+
+  const rows = getProductPerformanceRows();
+  if (!rows.length) {
+    els.productPerformanceBody.innerHTML = `<tr><td colspan="3">${state.transactions.length ? "No product profit in the selected period." : "Upload a statement to compare product profit."}</td></tr>`;
+    return;
+  }
+
+  els.productPerformanceBody.innerHTML = rows.map((row) => `
+    <tr>
+      <td class="truncate" title="${escapeAttr(row.product)}">${escapeHtml(row.product)}</td>
+      <td class="number">${row.orders}</td>
+      <td class="number ${row.profit < 0 ? "bad" : "good"}">${formatMoney(row.profit)}</td>
+    </tr>
+  `).join("");
+}
+
+function getProductPerformanceRows() {
+  const productMap = new Map();
+
+  state.orders.forEach((order) => {
+    const product = order.productTitle || "Unknown item";
+    const costs = calculateOrderCosts(order);
+    const profit = order.net - costs.total;
+    const current = productMap.get(product) || { product, orders: 0, profit: 0 };
+    current.orders += 1;
+    current.profit += profit;
+    productMap.set(product, current);
+  });
+
+  return [...productMap.values()]
+    .sort((a, b) => state.ui.productMode === "lowest" ? a.profit - b.profit : b.profit - a.profit)
+    .slice(0, 5);
+}
+
 function renderProductCosts() {
   if (!state.productTitles.length) {
-    els.productCostBody.innerHTML = `<tr><td colspan="3">Upload a statement to detect product titles.</td></tr>`;
+    els.productCostBody.innerHTML = `<tr><td colspan="3">${state.transactions.length ? "No product titles in the selected period." : "Upload a statement to detect product titles."}</td></tr>`;
     return;
   }
 
@@ -489,12 +687,19 @@ function renderProductCosts() {
 }
 
 function renderOrders() {
+  const visibleOrders = getVisibleOrders();
+
   if (!state.orders.length) {
-    els.ordersBody.innerHTML = `<tr><td colspan="11">Upload a statement to see order profit.</td></tr>`;
+    els.ordersBody.innerHTML = `<tr><td colspan="11">${state.transactions.length ? "No orders match the selected period." : "Upload a statement to see order profit."}</td></tr>`;
     return;
   }
 
-  els.ordersBody.innerHTML = state.orders.map((order) => {
+  if (!visibleOrders.length) {
+    els.ordersBody.innerHTML = `<tr><td colspan="11">No orders match the current search or filter.</td></tr>`;
+    return;
+  }
+
+  els.ordersBody.innerHTML = visibleOrders.map((order) => {
     const costs = calculateOrderCosts(order);
     const overrides = state.costs.orderOverrides[order.id] || {};
     const profit = order.net - costs.total;
@@ -516,13 +721,37 @@ function renderOrders() {
   }).join("");
 }
 
+function getVisibleOrders() {
+  const query = state.ui.orderSearch.trim().toLowerCase();
+
+  return [...state.orders]
+    .filter((order) => {
+      if (!query) return true;
+      const haystack = `${order.id} ${order.productTitles.join(" ")} ${order.productTitle}`.toLowerCase();
+      return haystack.includes(query);
+    })
+    .filter((order) => {
+      if (state.ui.orderProfitFilter !== "losing") return true;
+      const costs = calculateOrderCosts(order);
+      return order.net - costs.total < 0;
+    })
+    .sort((a, b) => {
+      if (state.ui.orderSort === "highest-profit" || state.ui.orderSort === "lowest-profit") {
+        const aProfit = a.net - calculateOrderCosts(a).total;
+        const bProfit = b.net - calculateOrderCosts(b).total;
+        return state.ui.orderSort === "highest-profit" ? bProfit - aProfit : aProfit - bProfit;
+      }
+      return b.dateValue - a.dateValue;
+    });
+}
+
 function renderTransactions() {
-  if (!state.transactions.length) {
-    els.transactionsBody.innerHTML = `<tr><td colspan="8">Upload a statement to see cleaned transactions.</td></tr>`;
+  if (!state.filteredTransactions.length) {
+    els.transactionsBody.innerHTML = `<tr><td colspan="8">${state.transactions.length ? "No transactions match the selected period." : "Upload a statement to see cleaned transactions."}</td></tr>`;
     return;
   }
 
-  els.transactionsBody.innerHTML = state.transactions.map((tx) => `
+  els.transactionsBody.innerHTML = state.filteredTransactions.map((tx) => `
     <tr>
       <td class="truncate" title="${escapeAttr(tx.source || "")}">${escapeHtml(tx.source || "")}</td>
       <td>${escapeHtml(tx.date)}</td>
@@ -670,7 +899,7 @@ function downloadWorkbookReport() {
     { wch: 16 },
     { wch: 14 },
     { wch: 36 }
-  ], { kind: "table", filterRef: `A1:I${Math.max(state.transactions.length + 1, 2)}` });
+  ], { kind: "table", filterRef: `A1:I${Math.max(state.filteredTransactions.length + 1, 2)}` });
   appendSheet(workbook, "Costs", buildCostsSheet(), [
     { wch: 44 },
     { wch: 16 },
@@ -690,7 +919,7 @@ function buildSummarySheet() {
     [],
     ["Overview", "", "", ""],
     ["Gross sales", roundMoney(totals.grossSales), "Orders", state.orders.length],
-    ["Etsy deductions", roundMoney(totals.etsyDeductions), "Transactions", state.transactions.length],
+    ["Etsy deductions", roundMoney(totals.etsyDeductions), "Transactions", state.filteredTransactions.length],
     ["Seller costs", roundMoney(totals.totalCosts), "Profit margin", totals.margin],
     ["Estimated profit", roundMoney(totals.estimatedProfit), "Bank deposits", roundMoney(totals.deposits)],
     [],
@@ -766,7 +995,7 @@ function buildTransactionsSheet() {
     "Info"
   ]];
 
-  state.transactions.forEach((tx) => {
+  state.filteredTransactions.forEach((tx) => {
     rows.push([
       tx.source || "",
       tx.date,
@@ -1003,6 +1232,63 @@ function formatFileMeta(sources, rowCount, orderCount, duplicatesSkipped) {
   const sourceLabel = `${sources.length} source${sources.length === 1 ? "" : "s"}`;
   const duplicateLabel = duplicatesSkipped ? `, ${duplicatesSkipped} duplicate row${duplicatesSkipped === 1 ? "" : "s"} skipped` : "";
   return `${sourceLabel}, ${rowCount} rows, ${orderCount} order${orderCount === 1 ? "" : "s"}${duplicateLabel}`;
+}
+
+function formatDetectedRange() {
+  if (!state.transactions.length) return "No date range detected yet";
+  const dates = state.transactions
+    .map((tx) => parseDateValue(tx.date))
+    .filter((value) => value > 0)
+    .sort((a, b) => a - b);
+
+  if (!dates.length) return "No date range detected yet";
+  return `Detected range: ${formatDateRange(dates[0], dates[dates.length - 1])}`;
+}
+
+function formatDateRange(startValue, endValue) {
+  const start = new Date(startValue);
+  const end = new Date(endValue);
+  const sameYear = start.getFullYear() === end.getFullYear();
+  const startOptions = { month: "long", day: "numeric", ...(sameYear ? {} : { year: "numeric" }) };
+  const endOptions = { month: "long", day: "numeric", year: "numeric" };
+  return `${start.toLocaleDateString("en-US", startOptions)}–${end.toLocaleDateString("en-US", endOptions)}`;
+}
+
+function pluralize(word, count) {
+  return count === 1 ? word : `${word}s`;
+}
+
+function showResetModal() {
+  els.resetModal.hidden = false;
+  els.cancelReset.focus();
+}
+
+function hideResetModal() {
+  els.resetModal.hidden = true;
+}
+
+function resetAllCosts() {
+  state.costs = {
+    defaultProductCost: "",
+    defaultShippingCost: "",
+    defaultPackagingCost: "",
+    defaultOtherCost: "",
+    fixedCosts: "",
+    productCosts: {},
+    orderOverrides: {}
+  };
+  saveCosts();
+  populateDefaultInputs();
+  hideResetModal();
+  renderAll();
+}
+
+function toggleExportHelp() {
+  els.exportHelpPanel.hidden = !els.exportHelpPanel.hidden;
+}
+
+function hideExportHelp() {
+  els.exportHelpPanel.hidden = true;
 }
 
 function populateDefaultInputs() {

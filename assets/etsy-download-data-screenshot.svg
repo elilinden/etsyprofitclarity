@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="330" viewBox="0 0 760 330" role="img" aria-labelledby="title desc">
+  <title id="title">Etsy download data location</title>
+  <desc id="desc">A simplified screenshot of Etsy Shop Manager settings with Options and Download Data highlighted.</desc>
+  <rect width="760" height="330" rx="18" fill="#f6f7f4"/>
+  <rect x="24" y="24" width="712" height="282" rx="14" fill="#ffffff" stroke="#dfe5e0"/>
+  <rect x="24" y="24" width="712" height="48" rx="14" fill="#17211b"/>
+  <circle cx="55" cy="48" r="7" fill="#bd3f3f"/>
+  <circle cx="78" cy="48" r="7" fill="#a86f18"/>
+  <circle cx="101" cy="48" r="7" fill="#176b4d"/>
+  <text x="132" y="53" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="700" fill="#ffffff">Etsy Shop Manager</text>
+  <rect x="48" y="96" width="168" height="182" rx="10" fill="#f1f4f0" stroke="#dfe5e0"/>
+  <text x="72" y="126" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#637068">Settings</text>
+  <rect x="64" y="148" width="128" height="34" rx="8" fill="#ffffff" stroke="#ccd6cf"/>
+  <text x="86" y="170" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#176b4d">Options</text>
+  <text x="72" y="214" font-family="Inter, Arial, sans-serif" font-size="13" fill="#637068">Info &amp; appearance</text>
+  <text x="72" y="246" font-family="Inter, Arial, sans-serif" font-size="13" fill="#637068">Shipping settings</text>
+  <rect x="244" y="96" width="468" height="182" rx="10" fill="#ffffff" stroke="#dfe5e0"/>
+  <text x="272" y="128" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="800" fill="#17211b">Options</text>
+  <line x1="272" y1="150" x2="676" y2="150" stroke="#dfe5e0"/>
+  <text x="282" y="181" font-family="Inter, Arial, sans-serif" font-size="13" fill="#637068">Shop preferences</text>
+  <rect x="414" y="160" width="132" height="34" rx="17" fill="#e7f3ed" stroke="#176b4d" stroke-width="2"/>
+  <text x="439" y="182" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="800" fill="#176b4d">Download Data</text>
+  <text x="566" y="181" font-family="Inter, Arial, sans-serif" font-size="13" fill="#637068">Close shop</text>
+  <rect x="282" y="220" width="222" height="34" rx="8" fill="#176b4d"/>
+  <text x="318" y="242" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="800" fill="#ffffff">Download CSV</text>
+  <path d="M548 178 C610 176 625 205 620 235" fill="none" stroke="#a86f18" stroke-width="4" stroke-linecap="round"/>
+  <path d="M610 228 L621 241 L632 227" fill="none" stroke="#a86f18" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

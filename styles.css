@@ -294,9 +294,9 @@ select:focus-visible,
 .file-summary {
   display: grid;
   align-content: center;
-  gap: 4px;
+  gap: 5px;
   min-width: 0;
-  padding: 14px 16px;
+  padding: 12px;
   border-radius: 8px;
   background: var(--surface-subtle);
   border: 1px solid var(--border);
@@ -310,13 +310,20 @@ select:focus-visible,
 }
 
 .file-summary span:first-child {
+  font-size: 0.98rem;
   font-weight: 650;
+  line-height: 1.25;
+}
+
+.file-summary span:nth-child(2) {
+  color: var(--text-secondary);
+  font-size: 0.86rem;
 }
 
 .period-controls {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 8px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
   align-items: center;
   margin-top: 8px;
 }
@@ -326,18 +333,18 @@ select:focus-visible,
 .table-toolbar label {
   gap: 5px;
   color: var(--text-muted);
-  font-size: 0.76rem;
+  font-size: 0.74rem;
 }
 
 .period-controls select,
 .custom-period input {
-  min-height: 34px;
+  min-height: 36px;
   font-size: 0.84rem;
 }
 
 .custom-period {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 8px;
   margin-top: 8px;
 }
@@ -346,11 +353,15 @@ select:focus-visible,
   display: none;
 }
 
-.detected-range {
+.file-summary .detected-range {
   display: block;
   margin-top: 7px;
   color: var(--text-muted);
   font-size: 0.78rem;
+  line-height: 1.35;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
 }
 
 .loaded .upload-band {
@@ -793,6 +804,7 @@ select:focus {
 
 table {
   width: 100%;
+  table-layout: auto;
   border-collapse: separate;
   border-spacing: 0;
   background: var(--surface);
@@ -835,7 +847,55 @@ tbody tr:hover td {
 }
 
 .transaction-table-wrap .dense-table {
-  min-width: 1120px;
+  min-width: 0;
+  table-layout: fixed;
+}
+
+.transaction-table-wrap th:nth-child(1),
+.transaction-table-wrap td:nth-child(1) {
+  width: 14%;
+}
+
+.transaction-table-wrap th:nth-child(2),
+.transaction-table-wrap td:nth-child(2) {
+  width: 11%;
+}
+
+.transaction-table-wrap th:nth-child(3),
+.transaction-table-wrap td:nth-child(3) {
+  width: 9%;
+}
+
+.transaction-table-wrap th:nth-child(4),
+.transaction-table-wrap td:nth-child(4) {
+  width: 30%;
+}
+
+.transaction-table-wrap th:nth-child(5),
+.transaction-table-wrap td:nth-child(5) {
+  width: 14%;
+}
+
+.transaction-table-wrap th:nth-child(6),
+.transaction-table-wrap td:nth-child(6),
+.transaction-table-wrap th:nth-child(8),
+.transaction-table-wrap td:nth-child(8) {
+  width: 7%;
+}
+
+.transaction-table-wrap th:nth-child(7),
+.transaction-table-wrap td:nth-child(7) {
+  width: 8%;
+}
+
+.transaction-table-wrap th,
+.transaction-table-wrap td {
+  padding-inline: 10px;
+}
+
+.transaction-table-wrap .truncate,
+.transaction-table-wrap .order-id {
+  max-width: 100%;
 }
 
 .truncate {
@@ -1033,6 +1093,10 @@ tbody tr:hover td {
     width: 100%;
   }
 
+  .transaction-table-wrap .dense-table {
+    min-width: 760px;
+  }
+
   .tab {
     width: 100%;
     padding-inline: 8px;
@@ -1115,4 +1179,3 @@ footer {
 .legal-container p {
   margin-bottom: 1rem;
 }
-

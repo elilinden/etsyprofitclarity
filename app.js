@@ -869,10 +869,10 @@ function downloadWorkbookReport() {
   };
 
   appendSheet(workbook, "Summary", buildSummarySheet(), [
-    { wch: 30 },
-    { wch: 18 },
-    { wch: 26 },
-    { wch: 18 }
+    { wch: 32 },
+    { wch: 17 },
+    { wch: 32 },
+    { wch: 32 }
   ], { kind: "summary" });
   appendSheet(workbook, "Orders", buildOrdersSheet(), [
     { wch: 16 },
@@ -915,7 +915,8 @@ function buildSummarySheet() {
   const totals = calculatedTotals();
   return [
     ["Etsy Profit Clarity Report", "", "", ""],
-    ["Generated", new Date().toLocaleString(), "Sources", state.files.map((source) => source.label).join(" | ") || "Uploaded Etsy statement"],
+    ["Generated", new Date().toLocaleString(), "", ""],
+    ["Sources", state.files.map((source) => source.label).join(" | ") || "Uploaded Etsy statement", "", ""],
     [],
     ["Overview", "", "", ""],
     ["Gross sales", roundMoney(totals.grossSales), "Orders", state.orders.length],
@@ -923,7 +924,8 @@ function buildSummarySheet() {
     ["Seller costs", roundMoney(totals.totalCosts), "Profit margin", totals.margin],
     ["Estimated profit", roundMoney(totals.estimatedProfit), "Bank deposits", roundMoney(totals.deposits)],
     [],
-    ["Profit Bridge", "Amount", "Notes", ""],
+    ["Profit Bridge", "", "", ""],
+    ["Metric", "Amount", "Notes", ""],
     ["Gross sales", roundMoney(totals.grossSales), "Total Etsy sale/payment rows before deductions", ""],
     ["Minus Etsy deductions", -roundMoney(totals.etsyDeductions), "Fees, buyer tax, ads, listing fees, and Etsy adjustments", ""],
     ["Net after Etsy rows", roundMoney(totals.statementNet), "Statement net excluding bank deposit transfer rows", ""],
@@ -931,7 +933,8 @@ function buildSummarySheet() {
     ["Minus fixed shop costs", -roundMoney(totals.fixedCosts), "Fixed costs entered in the app", ""],
     ["Estimated profit", roundMoney(totals.estimatedProfit), "Net after Etsy rows minus entered seller costs", ""],
     [],
-    ["Deduction Breakdown", "Amount", "Included", ""],
+    ["Deduction Breakdown", "", "", ""],
+    ["Deduction", "Amount", "Included in Etsy deductions", ""],
     ["Transaction fees", roundMoney(totals.transactionFees), "Yes", ""],
     ["Processing fees", roundMoney(totals.processingFees), "Yes", ""],
     ["Listing fees", roundMoney(totals.listingFees), "Yes", ""],
@@ -1050,20 +1053,46 @@ function appendSheet(workbook, name, rows, columns, options = {}) {
   const workbookLib = getWorkbookLibrary();
   const sheet = workbookLib.utils.aoa_to_sheet(rows);
   sheet["!cols"] = columns;
-  sheet["!rows"] = rows.map((row) => ({ hpt: isSectionRow(row) ? 25 : 22 }));
+  sheet["!rows"] = rows.map((row, index) => ({ hpt: getWorksheetRowHeight(row, index, options) }));
   sheet["!views"] = [{ showGridLines: false }];
   if (options.filterRef) sheet["!autofilter"] = { ref: options.filterRef };
   if (options.kind === "table") sheet["!freeze"] = { xSplit: 0, ySplit: 1 };
   if (options.kind === "summary") {
     sheet["!merges"] = [
       { s: { r: 0, c: 0 }, e: { r: 0, c: 3 } },
-      { s: { r: 3, c: 0 }, e: { r: 3, c: 3 } },
-      { s: { r: 9, c: 0 }, e: { r: 9, c: 3 } },
-      { s: { r: 17, c: 0 }, e: { r: 17, c: 3 } }
+      { s: { r: 1, c: 1 }, e: { r: 1, c: 3 } },
+      { s: { r: 2, c: 1 }, e: { r: 2, c: 3 } },
+      { s: { r: 4, c: 0 }, e: { r: 4, c: 3 } },
+      { s: { r: 10, c: 0 }, e: { r: 10, c: 3 } },
+      { s: { r: 12, c: 2 }, e: { r: 12, c: 3 } },
+      { s: { r: 13, c: 2 }, e: { r: 13, c: 3 } },
+      { s: { r: 14, c: 2 }, e: { r: 14, c: 3 } },
+      { s: { r: 15, c: 2 }, e: { r: 15, c: 3 } },
+      { s: { r: 16, c: 2 }, e: { r: 16, c: 3 } },
+      { s: { r: 17, c: 2 }, e: { r: 17, c: 3 } },
+      { s: { r: 19, c: 0 }, e: { r: 19, c: 3 } },
+      { s: { r: 20, c: 2 }, e: { r: 20, c: 3 } },
+      { s: { r: 28, c: 2 }, e: { r: 28, c: 3 } }
     ];
   }
   applyWorkbookFormats(sheet, rows, options);
   workbookLib.utils.book_append_sheet(workbook, sheet, name);
+}
+
+function getWorksheetRowHeight(rowValues, row, options) {
+  if (options.kind === "summary") {
+    if (row === 0) return 31;
+    if (row === 1 || row === 2) return 27;
+    if (isSectionRow(rowValues)) return 27;
+    if (isSummaryTableHeader(rowValues)) return 25;
+    if (row >= 12 && row <= 17) return 34;
+    if (row === 28) return 38;
+    return 24;
+  }
+
+  if (isSectionRow(rowValues)) return 25;
+  if (options.kind === "table" && row === 0) return 26;
+  return 22;
 }
 
 function applyWorkbookFormats(sheet, rows, options = {}) {
@@ -1101,9 +1130,9 @@ function getCellStyle(rowValues, row, col, options) {
   if (row === 0 && options.kind === "summary") {
     return {
       ...base,
-      font: { name: "Inter", sz: 20, bold: true, color: { rgb: "17211B" } },
+      font: { name: "Inter", sz: 17, bold: true, color: { rgb: "17211B" } },
       fill: { fgColor: { rgb: "E7F3ED" } },
-      alignment: { vertical: "center" },
+      alignment: { vertical: "center", wrapText: false },
       border: {
         top: { style: "medium", color: { rgb: "176B4D" } },
         bottom: { style: "medium", color: { rgb: "176B4D" } },
@@ -1113,12 +1142,30 @@ function getCellStyle(rowValues, row, col, options) {
     };
   }
 
+  if (options.kind === "summary" && (row === 1 || row === 2)) {
+    return {
+      ...base,
+      font: { name: "Inter", sz: 10.5, bold: col === 0, color: { rgb: col === 0 ? "637068" : "17211B" } },
+      fill: { fgColor: { rgb: "FFFFFF" } },
+      alignment: { vertical: "center", horizontal: "left", wrapText: true }
+    };
+  }
+
   if (isSectionRow(rowValues)) {
     return {
       ...base,
-      font: { name: "Inter", sz: 12, bold: true, color: { rgb: "176B4D" } },
+      font: { name: "Inter", sz: 11.5, bold: true, color: { rgb: "176B4D" } },
       fill: { fgColor: { rgb: "EDF6F1" } },
       alignment: { vertical: "center" }
+    };
+  }
+
+  if (options.kind === "summary" && isSummaryTableHeader(rowValues)) {
+    return {
+      ...base,
+      font: { name: "Inter", sz: 10, bold: true, color: { rgb: "637068" } },
+      fill: { fgColor: { rgb: "F1F4F0" } },
+      alignment: { vertical: "center", horizontal: col === 1 ? "right" : "left", wrapText: true }
     };
   }
 
@@ -1154,7 +1201,7 @@ function getCellStyle(rowValues, row, col, options) {
     },
     fill: { fgColor: { rgb: row % 2 === 0 ? "FFFFFF" : "FBFCFA" } },
     alignment: {
-      vertical: "center",
+      vertical: options.kind === "summary" && col >= 2 ? "top" : "center",
       horizontal: isMoneyOrCount ? "right" : "left",
       wrapText: true
     }
@@ -1175,6 +1222,10 @@ function applyCellNumberFormat(cell, header, label) {
 function isSectionRow(rowValues) {
   const [first, second, third, fourth] = rowValues;
   return Boolean(first) && !second && !third && !fourth;
+}
+
+function isSummaryTableHeader(rowValues) {
+  return rowValues[0] === "Metric" || rowValues[0] === "Deduction";
 }
 
 function isCostsSubheader(label) {
